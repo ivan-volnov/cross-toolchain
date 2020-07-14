@@ -67,6 +67,14 @@ cd $root_dir/tmp
 # cmake -G Ninja
 # ninja
 
+# binutils
+# wget http://ftp.gnu.org/gnu/binutils/binutils-2.34.tar.xz
+# tar xfz binutils-2.34.tar.xz || exit 1
+# cd binutils-2.34
+# ./configure --prefix=$root_dir --target=x86_64-elf --disable-nls --disable-werror
+# make -j5
+# make install
+
 # musl
 wget http://musl.libc.org/releases/musl-$musl_version.tar.gz || exit 1
 tar xfz musl-$musl_version.tar.gz || exit 1
