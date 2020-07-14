@@ -6,26 +6,20 @@ target=x86_64-unknown-linux-musl
 musl_version=1.2.0
 llvm_version=10.0.0
 
-# export PATH=$root_dir/bin:$PATH
-# export CROSS_COMPILE=x86_64-elf-
-
-
-# brew install llvm
-export CC=/usr/local/opt/llvm/bin/clang
-export CXX=/usr/local/opt/llvm/bin/clang++
+export PATH=$root_dir/bin:/usr/local/opt/llvm/bin:$PATH
+export CC=clang
+export CXX=clang++
 export CFLAGS="--target=$target"
 export CPPFLAGS="--target=$target"
-
-# brew install x86_64-elf-binutils
-export AR=x86_64-elf-ar
-export AS=x86_64-elf-as
-export LD=x86_64-elf-ld
-export NM=x86_64-elf-nm
-export OBDUMP=x86_64-elf-objdump
-export OBJCOPY=x86_64-elf-objcopy
-export RANLIB=x86_64-elf-ranlib
-export STRINGS=x86_64-elf-strings
-export STRIP=x86_64-elf-strip
+export AR=llvm-ar
+export AS=llvm-as
+export LD=ld.lld
+export NM=llvm-nm
+export OBDUMP=llvm-objdump
+export OBJCOPY=llvm-objcopy
+export RANLIB=llvm-ranlib
+export STRINGS=llvm-strings
+export STRIP=llvm-strip
 
 
 
@@ -67,14 +61,6 @@ cd $root_dir/tmp
 # cmake -G Ninja
 # ninja
 
-# binutils
-# wget http://ftp.gnu.org/gnu/binutils/binutils-2.34.tar.xz
-# tar xfz binutils-2.34.tar.xz || exit 1
-# cd binutils-2.34
-# ./configure --prefix=$root_dir --target=x86_64-elf --disable-nls --disable-werror
-# make -j5
-# make install
-
 # musl
 wget http://musl.libc.org/releases/musl-$musl_version.tar.gz || exit 1
 tar xfz musl-$musl_version.tar.gz || exit 1
@@ -83,3 +69,5 @@ cd musl-$musl_version
 make -j5 install
 
 
+cd ..
+rm -fr $root_dir/tmp
