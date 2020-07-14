@@ -1,6 +1,6 @@
-# cmake cross toolchain
+# Cross-compilation toolchain
 
-A description
+Cross-compilation toolchain using clang, cmake, musl and libc++
 
 ## Installation
 
