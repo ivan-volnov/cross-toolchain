@@ -63,7 +63,18 @@ cmake \
 make install -j8
 cd ..
 
-# cd libcxx
+cd libunwind
+cmake \
+    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
+    -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
+    -DLIBUNWIND_ENABLE_SHARED=OFF \
+    -DCMAKE_INSTALL_PREFIX=$root_dir \
+    -DCMAKE_BUILD_TYPE=Release \
+    . || exit 1
+make install -j8
+cd ..
+
 # cmake \
 #     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
 #     -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
