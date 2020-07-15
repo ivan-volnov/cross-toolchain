@@ -2,6 +2,9 @@
 
 Cross-Compilation toolchain using llvm/clang, cmake, musl and libc++
 
+Work in progress. Currently only C compiler is supported
+with x86_64-unknown-linux-musl target
+
 ## LLVM installation
 
 ```bash
