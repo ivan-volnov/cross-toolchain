@@ -43,9 +43,10 @@ for llvm_lib in $llvm_libs; do
     rm $llvm_lib-$llvm_version.src.tar.xz || exit 1
     mv $llvm_lib-$llvm_version.src $llvm_lib
 done
-cp -a compiler-rt compiler-rt-builtins
+mkdir build
+cd build
+rm -fr $root_dir/tmp/build/*
 
-cd compiler-rt-builtins
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
@@ -59,11 +60,10 @@ cmake \
     -DCOMPILER_RT_USE_BUILTINS_LIBRARY=ON \
     -DCMAKE_INSTALL_PREFIX=$root_dir \
     -DCMAKE_BUILD_TYPE=Release \
-    . || exit 1
-make install -j8
-cd ..
+    ../compiler-rt || exit 1
+make install -j4
+rm -fr $root_dir/tmp/build/*
 
-cd libunwind
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
     -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
@@ -71,9 +71,9 @@ cmake \
     -DLIBUNWIND_ENABLE_SHARED=OFF \
     -DCMAKE_INSTALL_PREFIX=$root_dir \
     -DCMAKE_BUILD_TYPE=Release \
-    . || exit 1
-make install -j8
-cd ..
+    ../libunwind || exit 1
+make install -j4
+rm -fr $root_dir/tmp/build/*
 
 # cmake \
 #     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
@@ -95,9 +95,6 @@ cd ..
 #     -DLIBCXX_HAS_GCC_S_LIB=OFF \
 #     -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
 #     -DLIBUNWIND_ENABLE_SHARED=OFF \
-#     -DCLANG_DEFAULT_CXX_STDLIB=libc++ \
-#     -DCLANG_DEFAULT_LINKER=lld \
-#     -DCLANG_DEFAULT_RTLIB=compiler-rt \
 #     -DCMAKE_INSTALL_PREFIX=$root_dir \
 #     -DCMAKE_BUILD_TYPE=Release \
 #     . || exit 1
