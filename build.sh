@@ -45,8 +45,8 @@ for llvm_lib in $llvm_libs; do
 done
 mkdir build
 cd build
-rm -fr $root_dir/tmp/build/*
 
+rm -fr $root_dir/tmp/build/*
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
@@ -56,14 +56,16 @@ cmake \
     -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
     -DCOMPILER_RT_BUILD_XRAY=OFF \
     -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
-    -DCOMPILER_RT_BUILD_CRT=OFF \
+    -DCOMPILER_RT_BUILD_CRT=ON \
     -DCOMPILER_RT_USE_BUILTINS_LIBRARY=ON \
+    -DCMAKE_C_FLAGS=-I$root_dir/include \
     -DCMAKE_INSTALL_PREFIX=$root_dir \
     -DCMAKE_BUILD_TYPE=Release \
     ../compiler-rt || exit 1
-make install -j4
-rm -fr $root_dir/tmp/build/*
+make install -j5 || exit 1
 
+
+rm -fr $root_dir/tmp/build/*
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
     -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
@@ -72,7 +74,7 @@ cmake \
     -DCMAKE_INSTALL_PREFIX=$root_dir \
     -DCMAKE_BUILD_TYPE=Release \
     ../libunwind || exit 1
-make install -j4
+make install -j5 || exit 1
 rm -fr $root_dir/tmp/build/*
 
 # cmake \
