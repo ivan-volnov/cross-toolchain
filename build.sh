@@ -89,29 +89,25 @@ cmake \
     ../libcxxabi || exit 1
 make install -j5 || exit 1
 
-# cmake \
-#     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
-#     -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-#     -DCMAKE_VERBOSE_MAKEFILE=ON \
-#     -DCOMPILER_RT_DEFAULT_TARGET_TRIPLE=$target \
-#     -DCOMPILER_RT_BUILD_BUILTINS=ON \
-#     -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
-#     -DCOMPILER_RT_BUILD_XRAY=OFF \
-#     -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
-#     -DCOMPILER_RT_BUILD_CRT=OFF \
-#     -DCOMPILER_RT_USE_BUILTINS_LIBRARY=ON \
-#     -DLIBCXXABI_LIBCXX_PATH=$root_dir/tmp/libcxx-$llvm_version.src \
-#     -DLIBCXXABI_LIBCXX_INCLUDES=$root_dir/tmp/libcxx-$llvm_version.src/include \
-#     -DLIBCXXABI_ENABLE_STATIC_UNWINDER=ON \
-#     -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
-#     -DLIBCXX_LIBCXXABI_INCLUDES_INTERNAL=$root_dir/tmp/libcxxabi-$llvm_version.src/include \
-#     -DLIBCXX_HAS_MUSL_LIBC=ON \
-#     -DLIBCXX_HAS_GCC_S_LIB=OFF \
-#     -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
-#     -DLIBUNWIND_ENABLE_SHARED=OFF \
-#     -DCMAKE_INSTALL_PREFIX=$root_dir \
-#     -DCMAKE_BUILD_TYPE=Release \
-#     . || exit 1
+
+rm -fr $root_dir/tmp/build/*
+cmake \
+    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
+    -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
+    -DLIBCXX_LIBCXXABI_INCLUDES_INTERNAL=$root_dir/tmp/libcxxabi/include \
+    -DLIBCXX_HAS_MUSL_LIBC=ON \
+    -DLIBCXX_HAS_GCC_S_LIB=OFF \
+    -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+    -DLIBCXX_ENABLE_SHARED=OFF \
+    -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
+    -DLIBCXX_INCLUDE_DOCS=OFF \
+    -DLIBCXX_ENABLE_RTTI=OFF \
+    -DCMAKE_INSTALL_PREFIX=$root_dir \
+    -DCMAKE_BUILD_TYPE=Release \
+    ../libcxx || exit 1
+make install -j5 || exit 1
+
 
 # cd ..
 # rm -fr $root_dir/tmp
