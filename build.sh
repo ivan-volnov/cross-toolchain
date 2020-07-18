@@ -93,7 +93,9 @@ cmake \
     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
     -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
     -DCMAKE_VERBOSE_MAKEFILE=ON \
-    -DLIBCXX_LIBCXXABI_INCLUDES_INTERNAL=$root_dir/tmp/libcxxabi/include \
+    -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$root_dir/tmp/libcxxabi/include \
+    -DLIBCXX_CXX_ABI_LIBRARY_PATH=$root_dir/lib \
+    -DLIBCXX_CXX_ABI=libcxxabi \
     -DLIBCXX_HAS_MUSL_LIBC=ON \
     -DLIBCXX_HAS_GCC_S_LIB=OFF \
     -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
