@@ -75,7 +75,19 @@ cmake \
     -DCMAKE_BUILD_TYPE=Release \
     ../libunwind || exit 1
 make install -j5 || exit 1
+
 rm -fr $root_dir/tmp/build/*
+cmake \
+    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
+    -DCMAKE_VERBOSE_MAKEFILE=ON \
+    -DLIBCXXABI_LIBCXX_INCLUDES=$root_dir/tmp/libcxx/include \
+    -DLIBCXXABI_LIBUNWIND_INCLUDES=$root_dir/tmp/libunwind/include \
+    -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+    -DLIBCXXABI_ENABLE_SHARED=OFF \
+    -DCMAKE_INSTALL_PREFIX=$root_dir \
+    -DCMAKE_BUILD_TYPE=Release \
+    ../libcxxabi || exit 1
+make install -j5 || exit 1
 
 # cmake \
 #     -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
