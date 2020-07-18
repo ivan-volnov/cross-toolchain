@@ -5,8 +5,9 @@ root_dir="$(cd -P -- "$(dirname -- "$0")" && pwd -P)"
 target=x86_64-unknown-linux-musl
 musl_version=1.2.0
 llvm_version=10.0.0
+linux_version=5.7.9
 
-export PATH=$root_dir/bin:$(brew --prefix llvm)/bin:$PATH
+export PATH=$(brew --prefix gnu-sed)/libexec/gnubin:$root_dir/bin:$(brew --prefix llvm)/bin:$PATH
 export CC=clang
 export CXX=clang++
 export CFLAGS="--target=$target"
@@ -34,6 +35,21 @@ tar xfz musl-$musl_version.tar.gz || exit 1
 cd musl-$musl_version
 ./configure --disable-shared --enable-debug --prefix=$root_dir
 make -j5 install
+
+# linux headers
+wget https://cdn.kernel.org/pub/linux/kernel/v${linux_version:0:1}.x/linux-$linux_version.tar.xz
+tar xf linux-$linux_version.tar.xz || exit 1
+cd linux-$linux_version
+mkdir -p $root_dir/tmp/inc/bits
+cp $root_dir/include/elf.h \
+   $root_dir/include/byteswap.h \
+   $root_dir/include/features.h \
+   $root_dir/include/endian.h \
+   $root_dir/tmp/inc
+touch $root_dir/tmp/inc/bits/alltypes.h
+make mrproper || exit 1
+make headers_check || exit 1
+make ARCH=x86_64 HOSTCFLAGS="-I$root_dir/tmp/inc" INSTALL_HDR_PATH=$root_dir headers_install || exit 1
 cd ..
 
 llvm_libs='libcxx libcxxabi libunwind'

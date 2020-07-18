@@ -8,7 +8,7 @@ with x86_64-unknown-linux-musl target
 ## LLVM installation
 
 ```bash
-brew install llvm
+brew install llvm gnu-sed
 ```
 
 ## Build the toolchain
