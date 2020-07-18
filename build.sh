@@ -36,7 +36,7 @@ cd musl-$musl_version
 make -j5 install
 cd ..
 
-llvm_libs='compiler-rt libcxx libcxxabi libunwind'
+llvm_libs='libcxx libcxxabi libunwind'
 for llvm_lib in $llvm_libs; do
     wget https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_version/$llvm_lib-$llvm_version.src.tar.xz || exit 1
     tar xf $llvm_lib-$llvm_version.src.tar.xz || exit 1
@@ -45,24 +45,6 @@ for llvm_lib in $llvm_libs; do
 done
 mkdir build
 cd build
-
-rm -fr $root_dir/tmp/build/*
-cmake \
-    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
-    -DCMAKE_VERBOSE_MAKEFILE=ON \
-    -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-    -DCOMPILER_RT_DEFAULT_TARGET_TRIPLE=$target \
-    -DCOMPILER_RT_BUILD_BUILTINS=ON \
-    -DCOMPILER_RT_BUILD_SANITIZERS=OFF \
-    -DCOMPILER_RT_BUILD_XRAY=OFF \
-    -DCOMPILER_RT_BUILD_LIBFUZZER=OFF \
-    -DCOMPILER_RT_BUILD_CRT=ON \
-    -DCOMPILER_RT_USE_BUILTINS_LIBRARY=ON \
-    -DCMAKE_C_FLAGS=-I$root_dir/include \
-    -DCMAKE_INSTALL_PREFIX=$root_dir \
-    -DCMAKE_BUILD_TYPE=Release \
-    ../compiler-rt || exit 1
-make install -j5 || exit 1
 
 
 rm -fr $root_dir/tmp/build/*
