@@ -7,7 +7,7 @@ musl_version=1.2.0
 llvm_version=10.0.0
 linux_version=5.7.9
 
-export PATH=$(brew --prefix gnu-sed)/libexec/gnubin:$root_dir/bin:$(brew --prefix llvm)/bin:$PATH
+export PATH=$(brew --prefix gnu-sed)/libexec/gnubin:$(brew --prefix llvm)/bin:$PATH
 export CC=clang
 export CXX=clang++
 export CFLAGS="--target=$target"
@@ -25,17 +25,17 @@ export STRIP=llvm-strip
 
 rm -fr $root_dir/tmp/*
 mkdir -p $root_dir/tmp/build
-cd $root_dir/tmp
 
 # musl
 curl -L --retry 5 http://musl.libc.org/releases/musl-$musl_version.tar.gz | tar xC $root_dir/tmp || exit 1
-cd $root_dir/tmp/musl-$musl_version
+cd $root_dir/tmp/musl-$musl_version || exit 1
 ./configure --disable-shared --prefix=$root_dir
 make -j5 install
+rm -fr $root_dir/tmp/musl-$musl_version &
 
 # linux headers
 curl -L --retry 5 https://cdn.kernel.org/pub/linux/kernel/v${linux_version:0:1}.x/linux-$linux_version.tar.xz | tar xC $root_dir/tmp || exit 1
-cd $root_dir/tmp/linux-$linux_version
+cd $root_dir/tmp/linux-$linux_version || exit 1
 mkdir -p $root_dir/tmp/inc/bits
 cp $root_dir/include/elf.h \
    $root_dir/include/byteswap.h \
@@ -47,21 +47,22 @@ make mrproper || exit 1
 make headers_check || exit 1
 make -j5 ARCH=x86_64 HOSTCFLAGS="-I$root_dir/tmp/inc" INSTALL_HDR_PATH=$root_dir headers_install || exit 1
 
+rm -fr $root_dir/tmp/linux-$linux_version &
+
 llvm_libs='libunwind libcxxabi libcxx'
 for llvm_lib in $llvm_libs; do
     curl -L --retry 5 https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_version/$llvm_lib-$llvm_version.src.tar.xz | tar xC $root_dir/tmp || exit 1
-    mv $root_dir/tmp/$llvm_lib-$llvm_version.src $root_dir/tmp/$llvm_lib
+    mv $root_dir/tmp/$llvm_lib-$llvm_version.src $root_dir/tmp/$llvm_lib || exit 1
 done
 
 
-cd $root_dir/tmp/build
+cd $root_dir/tmp/build || exit 1
 for llvm_lib in $llvm_libs; do
     rm -fr $root_dir/tmp/build/*
     cmake \
         -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
-        -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-        -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DCMAKE_INSTALL_PREFIX=$root_dir \
+        -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -DLIBUNWIND_ENABLE_SHARED=OFF \
         -DLIBCXXABI_LIBCXX_INCLUDES=$root_dir/tmp/libcxx/include \
@@ -82,5 +83,5 @@ for llvm_lib in $llvm_libs; do
     make -j5 install || exit 1
 done
 
-cd ..
-# rm -fr $root_dir/tmp
+cd $root_dir
+rm -fr $root_dir/tmp
