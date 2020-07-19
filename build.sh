@@ -23,32 +23,19 @@ export STRINGS=llvm-strings
 export STRIP=llvm-strip
 
 
-
-
-mkdir -p $root_dir/tmp
 rm -fr $root_dir/tmp/*
+mkdir -p $root_dir/tmp/build
 cd $root_dir/tmp
 
 # musl
-wget http://musl.libc.org/releases/musl-$musl_version.tar.gz || exit 1
-tar xfz musl-$musl_version.tar.gz || exit 1
-cd musl-$musl_version
+curl -L --retry 5 http://musl.libc.org/releases/musl-$musl_version.tar.gz | tar xC $root_dir/tmp || exit 1
+cd $root_dir/tmp/musl-$musl_version
 ./configure --disable-shared --prefix=$root_dir
 make -j5 install
-cd ..
-
-llvm_libs='libunwind libcxxabi libcxx'
-for llvm_lib in $llvm_libs; do
-    wget https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_version/$llvm_lib-$llvm_version.src.tar.xz || exit 1
-    tar xf $llvm_lib-$llvm_version.src.tar.xz || exit 1
-    rm $llvm_lib-$llvm_version.src.tar.xz || exit 1
-    mv $llvm_lib-$llvm_version.src $llvm_lib
-done
 
 # linux headers
-wget https://cdn.kernel.org/pub/linux/kernel/v${linux_version:0:1}.x/linux-$linux_version.tar.xz
-tar xf linux-$linux_version.tar.xz || exit 1
-cd linux-$linux_version
+curl -L --retry 5 https://cdn.kernel.org/pub/linux/kernel/v${linux_version:0:1}.x/linux-$linux_version.tar.xz | tar xC $root_dir/tmp || exit 1
+cd $root_dir/tmp/linux-$linux_version
 mkdir -p $root_dir/tmp/inc/bits
 cp $root_dir/include/elf.h \
    $root_dir/include/byteswap.h \
@@ -59,57 +46,41 @@ touch $root_dir/tmp/inc/bits/alltypes.h
 make mrproper || exit 1
 make headers_check || exit 1
 make -j5 ARCH=x86_64 HOSTCFLAGS="-I$root_dir/tmp/inc" INSTALL_HDR_PATH=$root_dir headers_install || exit 1
-cd ..
 
-mkdir build
-cd build
-
-
-rm -fr $root_dir/tmp/build/*
-cmake \
-    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
-    -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-    -DCMAKE_VERBOSE_MAKEFILE=ON \
-    -DLIBUNWIND_ENABLE_SHARED=OFF \
-    -DCMAKE_INSTALL_PREFIX=$root_dir \
-    -DCMAKE_BUILD_TYPE=MinSizeRel \
-    ../libunwind || exit 1
-make install -j5 || exit 1
-
-rm -fr $root_dir/tmp/build/*
-cmake \
-    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
-    -DCMAKE_VERBOSE_MAKEFILE=ON \
-    -DLIBCXXABI_LIBCXX_INCLUDES=$root_dir/tmp/libcxx/include \
-    -DLIBCXXABI_LIBUNWIND_INCLUDES=$root_dir/tmp/libunwind/include \
-    -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
-    -DLIBCXXABI_ENABLE_SHARED=OFF \
-    -DCMAKE_INSTALL_PREFIX=$root_dir \
-    -DCMAKE_BUILD_TYPE=MinSizeRel \
-    ../libcxxabi || exit 1
-make install -j5 || exit 1
+llvm_libs='libunwind libcxxabi libcxx'
+for llvm_lib in $llvm_libs; do
+    curl -L --retry 5 https://github.com/llvm/llvm-project/releases/download/llvmorg-$llvm_version/$llvm_lib-$llvm_version.src.tar.xz | tar xC $root_dir/tmp || exit 1
+    mv $root_dir/tmp/$llvm_lib-$llvm_version.src $root_dir/tmp/$llvm_lib
+done
 
 
-rm -fr $root_dir/tmp/build/*
-cmake \
-    -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
-    -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
-    -DCMAKE_VERBOSE_MAKEFILE=ON \
-    -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$root_dir/tmp/libcxxabi/include \
-    -DLIBCXX_CXX_ABI_LIBRARY_PATH=$root_dir/lib \
-    -DLIBCXX_CXX_ABI=libcxxabi \
-    -DLIBCXX_HAS_MUSL_LIBC=ON \
-    -DLIBCXX_HAS_GCC_S_LIB=OFF \
-    -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
-    -DLIBCXX_ENABLE_SHARED=OFF \
-    -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
-    -DLIBCXX_INCLUDE_DOCS=OFF \
-    -DLIBCXX_ENABLE_RTTI=OFF \
-    -DCMAKE_INSTALL_PREFIX=$root_dir \
-    -DCMAKE_BUILD_TYPE=MinSizeRel \
-    ../libcxx || exit 1
-make install -j5 || exit 1
-
+cd $root_dir/tmp/build
+for llvm_lib in $llvm_libs; do
+    rm -fr $root_dir/tmp/build/*
+    cmake \
+        -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
+        -DCMAKE_TRY_COMPILE_TARGET_TYPE=STATIC_LIBRARY \
+        -DCMAKE_VERBOSE_MAKEFILE=ON \
+        -DCMAKE_INSTALL_PREFIX=$root_dir \
+        -DCMAKE_BUILD_TYPE=MinSizeRel \
+        -DLIBUNWIND_ENABLE_SHARED=OFF \
+        -DLIBCXXABI_LIBCXX_INCLUDES=$root_dir/tmp/libcxx/include \
+        -DLIBCXXABI_LIBUNWIND_INCLUDES=$root_dir/tmp/libunwind/include \
+        -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
+        -DLIBCXXABI_ENABLE_SHARED=OFF \
+        -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$root_dir/tmp/libcxxabi/include \
+        -DLIBCXX_CXX_ABI_LIBRARY_PATH=$root_dir/lib \
+        -DLIBCXX_CXX_ABI=libcxxabi \
+        -DLIBCXX_HAS_MUSL_LIBC=ON \
+        -DLIBCXX_HAS_GCC_S_LIB=OFF \
+        -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=ON \
+        -DLIBCXX_ENABLE_SHARED=OFF \
+        -DLIBCXX_INCLUDE_BENCHMARKS=OFF \
+        -DLIBCXX_INCLUDE_DOCS=OFF \
+        -DLIBCXX_ENABLE_RTTI=OFF \
+        ../$llvm_lib || exit 1
+    make -j5 install || exit 1
+done
 
 cd ..
 # rm -fr $root_dir/tmp
