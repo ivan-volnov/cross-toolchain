@@ -9,7 +9,9 @@ llvm_version=10.0.0
 linux_version=5.7.9
 
 llvm_path=$(brew --prefix llvm)/bin
-tmp_dir=$root_dir/tmp
+tmp_dir=/tmp/build_$target
+toolchain_dir=$root_dir/$target
+
 export PATH=$(brew --prefix gnu-sed)/libexec/gnubin:$llvm_path:$PATH
 export CC=$llvm_path/clang
 export CXX=$llvm_path/clang++
@@ -26,7 +28,12 @@ export CFLAGS="--target=$target"
 export CPPFLAGS="--target=$target"
 
 
-cat > $root_dir/toolchain.cmake << EOF
+rm -fr $tmp_dir/*
+mkdir -p $tmp_dir/build
+mkdir $toolchain_dir
+
+
+cat > $toolchain_dir/toolchain.cmake << EOF
 set(CMAKE_SYSTEM_NAME $system_name)
 set(CMAKE_C_COMPILER $CC)
 set(CMAKE_CXX_COMPILER $CXX)
@@ -38,7 +45,7 @@ set(CMAKE_OBJDUMP $OBJDUMP)
 set(CMAKE_C_COMPILER_TARGET $target})
 set(CMAKE_CXX_COMPILER_TARGET $target)
 set(CMAKE_ASM_COMPILER_TARGET $target)
-set(CMAKE_SYSROOT $root_dir)
+set(CMAKE_SYSROOT $toolchain_dir)
 set(CMAKE_C_STANDARD_INCLUDE_DIRECTORIES \${CMAKE_SYSROOT}/include)
 set(CMAKE_CXX_STANDARD_INCLUDE_DIRECTORIES \${CMAKE_SYSROOT}/include/c++/v1 \${CMAKE_SYSROOT}/include)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
@@ -56,17 +63,13 @@ set(CMAKE_CXX_STANDARD_LIBRARIES "-L\${CMAKE_SYSROOT}/lib -l:crt1.o -l:crti.o -l
 set(CMAKE_CXX_LINK_EXECUTABLE "$LD <CMAKE_CXX_LINK_FLAGS> <LINK_FLAGS> <OBJECTS> -o <TARGET> <LINK_LIBRARIES>")
 EOF
 
-sed 's/-lc++//;s/-lc++abi//;s/-lunwind//;s/-lm//;s/-fno-rtti//' $root_dir/toolchain.cmake > $root_dir/toolchain_tmp.cmake
-
-
-rm -fr $tmp_dir/*
-mkdir -p $tmp_dir/build
+sed 's/-lc++//;s/-lc++abi//;s/-lunwind//;s/-lm//;s/-fno-rtti//' $toolchain_dir/toolchain.cmake > $toolchain_dir/toolchain_tmp.cmake
 
 
 # musl
 curl -L --retry 5 http://musl.libc.org/releases/musl-$musl_version.tar.gz | tar xC $tmp_dir || exit 1
 cd $tmp_dir/musl-$musl_version || exit 1
-./configure --disable-shared --prefix=$root_dir
+./configure --disable-shared --prefix=$toolchain_dir
 make -j5 install
 rm -fr $tmp_dir/musl-$musl_version &
 
@@ -76,15 +79,15 @@ if [[ "$system_name" == "Linux" ]]; then
     curl -L --retry 5 https://cdn.kernel.org/pub/linux/kernel/v${linux_version:0:1}.x/linux-$linux_version.tar.xz | tar xC $tmp_dir || exit 1
     cd $tmp_dir/linux-$linux_version || exit 1
     mkdir -p $tmp_dir/inc/bits
-    cp $root_dir/include/elf.h \
-    $root_dir/include/byteswap.h \
-    $root_dir/include/features.h \
-    $root_dir/include/endian.h \
-    $tmp_dir/inc
+    cp $toolchain_dir/include/elf.h \
+        $toolchain_dir/include/byteswap.h \
+        $toolchain_dir/include/features.h \
+        $toolchain_dir/include/endian.h \
+        $tmp_dir/inc
     touch $tmp_dir/inc/bits/alltypes.h
     make mrproper || exit 1
     make headers_check || exit 1
-    make -j5 ARCH=x86_64 HOSTCFLAGS="-I$tmp_dir/inc" INSTALL_HDR_PATH=$root_dir headers_install || exit 1
+    make -j5 ARCH=x86_64 HOSTCFLAGS="-I$tmp_dir/inc" INSTALL_HDR_PATH=$toolchain_dir headers_install || exit 1
     rm -fr $tmp_dir/linux-$linux_version $tmp_dir/inc &
 fi
 
@@ -99,8 +102,8 @@ cd $tmp_dir/build || exit 1
 for llvm_lib in $llvm_libs; do
     rm -fr $tmp_dir/build/*
     cmake \
-        -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain_tmp.cmake \
-        -DCMAKE_INSTALL_PREFIX=$root_dir \
+        -DCMAKE_TOOLCHAIN_FILE=$toolchain_dir/toolchain_tmp.cmake \
+        -DCMAKE_INSTALL_PREFIX=$toolchain_dir \
         -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
         -DLIBUNWIND_ENABLE_SHARED=OFF \
@@ -109,7 +112,7 @@ for llvm_lib in $llvm_libs; do
         -DLIBCXXABI_USE_LLVM_UNWINDER=ON \
         -DLIBCXXABI_ENABLE_SHARED=OFF \
         -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$tmp_dir/libcxxabi/include \
-        -DLIBCXX_CXX_ABI_LIBRARY_PATH=$root_dir/lib \
+        -DLIBCXX_CXX_ABI_LIBRARY_PATH=$toolchain_dir/lib \
         -DLIBCXX_CXX_ABI=libcxxabi \
         -DLIBCXX_HAS_MUSL_LIBC=ON \
         -DLIBCXX_HAS_GCC_S_LIB=OFF \
@@ -123,4 +126,4 @@ for llvm_lib in $llvm_libs; do
 done
 
 cd $root_dir
-rm -fr $root_dir/toolchain_tmp.cmake $tmp_dir
+rm -fr $toolchain_dir/toolchain_tmp.cmake $tmp_dir
