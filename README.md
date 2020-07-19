@@ -1,17 +1,33 @@
-# Cross-Compilation toolchain
+# Cross-Compilation Toolchain
 
-Cross-Compilation toolchain using llvm/clang, cmake, musl and libc++
+Cross-Compilation toolchain using llvm/clang, cmake, musl and libc++ for macOS host
 
-Work in progress. Currently only C compiler is supported
-with x86_64-unknown-linux-musl target
+## Technology Stack
 
-## LLVM installation
+- llvm/clang
+- cmake
+- musl
+- libc++
+- libcxxabi
+- libunwind
+- linux kernel headers
+
+## Toolchain Features
+
+- x86_64-unknown-linux-musl target is by default but you can set any
+- statically linked
+- minimal release build
+  - helloworld C takes only 22Kb
+  - helloworld C++ takes only 762Kb
+- -fno-rtti by default
+
+## Install Dependencies
 
 ```bash
 brew install llvm gnu-sed
 ```
 
-## Build the toolchain
+## Build the Toolchain
 
 ```bash
 ./build.sh
@@ -39,7 +55,7 @@ int main()
 }
 ```
 
-### make
+### Make
 
 ```bash
 mkdir build && cd build
