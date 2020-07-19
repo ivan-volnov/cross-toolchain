@@ -46,7 +46,6 @@ touch $root_dir/tmp/inc/bits/alltypes.h
 make mrproper || exit 1
 make headers_check || exit 1
 make -j5 ARCH=x86_64 HOSTCFLAGS="-I$root_dir/tmp/inc" INSTALL_HDR_PATH=$root_dir headers_install || exit 1
-
 rm -fr $root_dir/tmp/linux-$linux_version &
 
 llvm_libs='libunwind libcxxabi libcxx'
@@ -55,12 +54,13 @@ for llvm_lib in $llvm_libs; do
     mv $root_dir/tmp/$llvm_lib-$llvm_version.src $root_dir/tmp/$llvm_lib || exit 1
 done
 
+sed 's/-lc++//;s/-lc++abi//;s/-lunwind//;s/-lm//;s/-fno-rtti//' $root_dir/toolchain.cmake > $root_dir/toolchain_tmp.cmake
 
 cd $root_dir/tmp/build || exit 1
 for llvm_lib in $llvm_libs; do
     rm -fr $root_dir/tmp/build/*
     cmake \
-        -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain.cmake \
+        -DCMAKE_TOOLCHAIN_FILE=$root_dir/toolchain_tmp.cmake \
         -DCMAKE_INSTALL_PREFIX=$root_dir \
         -DCMAKE_VERBOSE_MAKEFILE=ON \
         -DCMAKE_BUILD_TYPE=MinSizeRel \
@@ -84,4 +84,4 @@ for llvm_lib in $llvm_libs; do
 done
 
 cd $root_dir
-rm -fr $root_dir/tmp
+rm -fr $root_dir/toolchain_tmp.cmake $root_dir/tmp
