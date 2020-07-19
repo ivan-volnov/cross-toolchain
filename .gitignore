@@ -2,3 +2,4 @@
 */include/
 */lib/
 */toolchain.cmake
+*/toolchain_tmp.cmake
