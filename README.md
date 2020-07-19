@@ -17,8 +17,8 @@ Cross-Compilation toolchain using llvm/clang, cmake, musl and libc++ for macOS h
 - x86_64-unknown-linux-musl target is by default but you can set any
 - statically linked
 - minimal release build
-  - helloworld C takes only 22Kb
-  - helloworld C++ takes only 762Kb
+  - helloworld C takes only 9.5Kb
+  - helloworld C++ takes only 756Kb
 - -fno-rtti by default
 
 ## Install Dependencies
